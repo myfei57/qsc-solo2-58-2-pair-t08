@@ -34,3 +34,16 @@ def require_text_list(payload: Mapping[str, Any], key: str) -> list[str]:
             raise InvalidRequest(f"{key} entries must be non-empty strings")
         items.append(item.strip())
     return items
+
+
+def optional_int(
+    payload: Mapping[str, Any], key: str, default: int, minimum: int, maximum: int
+) -> int:
+    value = payload.get(key)
+    if value is None:
+        return default
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise InvalidRequest(f"{key} must be an integer")
+    if not minimum <= value <= maximum:
+        raise InvalidRequest(f"{key} must be between {minimum} and {maximum}")
+    return value
