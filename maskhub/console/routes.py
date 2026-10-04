@@ -4,7 +4,16 @@ from __future__ import annotations
 
 from functools import partial
 
-from maskhub.console.handlers import audit, catalog, policy, rule, source, system
+from maskhub.console.handlers import (
+    audit,
+    catalog,
+    lineage,
+    policy,
+    preflight,
+    rule,
+    source,
+    system,
+)
 from maskhub.console.http import Request, Response
 from maskhub.console.router import Router
 
@@ -35,6 +44,15 @@ def build_router(runtime) -> Router:
     router.post("/policy/retire", bind(policy.retire_policy, runtime))
     router.post("/policy/coverage", bind(policy.policy_coverage, runtime))
     router.get("/policy/gaps", bind(policy.coverage_gap, runtime))
+
+    router.get("/consumers", bind(lineage.list_consumers, runtime))
+    router.post("/consumers", bind(lineage.register_consumer, runtime))
+    router.post("/consumer/remove", bind(lineage.remove_consumer, runtime))
+
+    router.post("/preflight/run", bind(preflight.run, runtime))
+    router.get("/preflight/ticket", bind(preflight.get_ticket, runtime))
+    router.get("/preflight/tickets", bind(preflight.list_tickets, runtime))
+    router.post("/policy/execute", bind(preflight.execute, runtime))
 
     router.get("/audit", bind(audit.list_audit, runtime))
     router.get("/audit/summary", bind(audit.audit_summary, runtime))

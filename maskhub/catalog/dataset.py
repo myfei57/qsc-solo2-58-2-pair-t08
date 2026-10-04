@@ -17,6 +17,7 @@ class Dataset:
     source: str
     owner: str
     fields: tuple[Field, ...]
+    watermark_column: str = ""
 
     def __post_init__(self) -> None:
         if not self.identifier.strip():
@@ -25,6 +26,8 @@ class Dataset:
             raise ValueError("dataset source is required")
         if not self.fields:
             raise ValueError("dataset must declare at least one field")
+        if self.watermark_column and self.field(self.watermark_column) is None:
+            raise ValueError(f"watermark column {self.watermark_column!r} is not declared")
 
     def field(self, name: str) -> Field | None:
         for item in self.fields:
@@ -41,6 +44,7 @@ class Dataset:
             "source": self.source,
             "owner": self.owner,
             "fields": [item.as_dict() for item in self.fields],
+            "watermark_column": self.watermark_column,
         }
 
     @classmethod
@@ -51,9 +55,12 @@ class Dataset:
         source = payload.get("source")
         owner = payload.get("owner", "")
         raw_fields = payload.get("fields")
+        watermark = payload.get("watermark_column", "")
         if not isinstance(identifier, str) or not isinstance(source, str):
             return None
         if not isinstance(owner, str) or not isinstance(raw_fields, list):
+            return None
+        if not isinstance(watermark, str):
             return None
         fields = tuple(
             item for item in (Field.from_dict(raw) for raw in raw_fields) if item is not None
@@ -61,7 +68,13 @@ class Dataset:
         if len(fields) != len(raw_fields):
             return None
         try:
-            return cls(identifier=identifier, source=source, owner=owner, fields=fields)
+            return cls(
+                identifier=identifier,
+                source=source,
+                owner=owner,
+                fields=fields,
+                watermark_column=watermark,
+            )
         except ValueError:
             return None
 

@@ -41,13 +41,18 @@ def register_dataset(runtime, request: Request) -> Response:
     identifier = require_text(payload, "identifier")
     source = require_text(payload, "source")
     owner = require_text(payload, "owner")
+    watermark = payload.get("watermark_column", "")
+    if not isinstance(watermark, str):
+        raise InvalidRequest("watermark_column must be a string")
     runtime.sources.get(source)
     dataset = Dataset(
         identifier=identifier,
         source=source,
         owner=owner,
         fields=_parse_fields(runtime, owner, payload.get("fields")),
+        watermark_column=watermark.strip(),
     )
     runtime.datasets.save(dataset)
+    runtime.consumers.validate_for(dataset)
     runtime.journal.append("dataset.register", identifier, source)
     return Response.json(200, dataset.as_dict())
